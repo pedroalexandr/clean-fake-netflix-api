@@ -162,6 +162,34 @@ describe('Login Router', () => {
     expect(httpResponse.body).toEqual(new InternalServerError())
   })
 
+  test('Should return 500 if no EmailValidator is provided', async () => {
+    const authenticationUseCase = makeAuthenticationUseCase()
+    const sut = new LoginRouter(authenticationUseCase)
+    const httpRequest = {
+      body: {
+        email: 'foo_email@email.com',
+        password: 'foo_password'
+      }
+    }
+    const httpResponse = await sut.route(httpRequest)
+    expect(httpResponse.statusCode).toBe(500)
+    expect(httpResponse.body).toEqual(new InternalServerError())
+  })
+
+  test('Should return 500 if EmailValidator has no isValid method', async () => {
+    const authenticationUseCase = makeAuthenticationUseCase()
+    const sut = new LoginRouter(authenticationUseCase, {})
+    const httpRequest = {
+      body: {
+        email: 'foo_email@email.com',
+        password: 'foo_password'
+      }
+    }
+    const httpResponse = await sut.route(httpRequest)
+    expect(httpResponse.statusCode).toBe(500)
+    expect(httpResponse.body).toEqual(new InternalServerError())
+  })
+
   test('Should return 500 if AuthenticationUseCase has no authenticate method', async () => {
     const sut = new LoginRouter({})
     const httpRequest = {
