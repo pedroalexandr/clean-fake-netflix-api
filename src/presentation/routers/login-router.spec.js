@@ -1,5 +1,6 @@
 const LoginRouter = require('./login-router')
 const MissingParamError = require('../helpers/missing-param-error')
+const UnauthorizedError = require('../helpers/unauthorized-error')
 
 // Design pattern: Factory
 // Avoid crashing other places that call the object
@@ -59,7 +60,7 @@ describe('Login Router', () => {
     expect(httpResponse.statusCode).toBe(500)
   })
 
-  test('Should call AuthenticationUseCaseSpy with correct parameters', () => {
+  test('Should call AuthenticationUseCase with correct parameters', () => {
     const { sut, authenticationUseCaseSpy } = buildSUT()
     const httpRequest = {
       body: {
@@ -81,6 +82,6 @@ describe('Login Router', () => {
       }
     }
     const httpResponse = sut.route(httpRequest)
-    expect(httpResponse.statusCode).toBe(401)
+    expect(httpResponse.body).toEqual(new UnauthorizedError())
   })
 })
