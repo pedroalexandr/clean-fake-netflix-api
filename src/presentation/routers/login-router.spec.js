@@ -6,7 +6,7 @@ const UnauthorizedError = require('../helpers/unauthorized-error')
 // Avoid crashing other places that call the object
 const buildSUT = () => {
   class AuthenticationUseCaseSpy {
-    auth (email, password) {
+    authenticate (email, password) {
       this.email = email
       this.password = password
     }
@@ -84,5 +84,29 @@ describe('Login Router', () => {
     const httpResponse = sut.route(httpRequest)
     expect(httpResponse.statusCode).toBe(401)
     expect(httpResponse.body).toEqual(new UnauthorizedError())
+  })
+
+  test('Should return 500 if no AuthenticationUseCase is provided', () => {
+    const sut = new LoginRouter()
+    const httpRequest = {
+      body: {
+        email: 'foo_email@email.com',
+        password: 'foo_password'
+      }
+    }
+    const httpResponse = sut.route(httpRequest)
+    expect(httpResponse.statusCode).toBe(500)
+  })
+
+  test('Should return 500 if AuthenticationUseCase has no authenticate method', () => {
+    const sut = new LoginRouter({})
+    const httpRequest = {
+      body: {
+        email: 'foo_email@email.com',
+        password: 'foo_password'
+      }
+    }
+    const httpResponse = sut.route(httpRequest)
+    expect(httpResponse.statusCode).toBe(500)
   })
 })

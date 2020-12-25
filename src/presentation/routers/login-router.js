@@ -6,7 +6,10 @@ module.exports = class LoginRouter {
   }
 
   route (httpRequest) {
-    if (!httpRequest || !httpRequest.body) {
+    if (!httpRequest ||
+        !httpRequest.body ||
+        !this.authenticationUseCase ||
+        !this.authenticationUseCase.authenticate) {
       return HttpResponse.internalServerError()
     }
 
@@ -19,7 +22,7 @@ module.exports = class LoginRouter {
       return HttpResponse.badRequest('password')
     }
 
-    this.authenticationUseCase.auth(email, password)
+    this.authenticationUseCase.authenticate(email, password)
 
     return HttpResponse.unauthorizedError()
   }
