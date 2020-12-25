@@ -71,4 +71,16 @@ describe('Login Router', () => {
     expect(authenticationUseCaseSpy.email).toBe(httpRequest.body.email)
     expect(authenticationUseCaseSpy.password).toBe(httpRequest.body.password)
   })
+
+  test('Should return 401 when invalid credentials are provided', () => {
+    const { sut } = buildSUT()
+    const httpRequest = {
+      body: {
+        email: 'foo_invalid_email@email.com',
+        password: 'foo_invalid_password'
+      }
+    }
+    const httpResponse = sut.route(httpRequest)
+    expect(httpResponse.statusCode).toBe(401)
+  })
 })
