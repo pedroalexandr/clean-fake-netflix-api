@@ -6,28 +6,25 @@ module.exports = class LoginRouter {
   }
 
   route (httpRequest) {
-    if (!httpRequest ||
-        !httpRequest.body ||
-        !this.authenticationUseCase ||
-        !this.authenticationUseCase.authenticate) {
+    try {
+      const { email, password } = httpRequest.body
+
+      if (!email) {
+        return HttpResponse.badRequest('email')
+      }
+      if (!password) {
+        return HttpResponse.badRequest('password')
+      }
+
+      const accessToken = this.authenticationUseCase.authenticate(email, password)
+
+      if (!accessToken) {
+        return HttpResponse.unauthorizedError()
+      }
+
+      return HttpResponse.ok({ accessToken })
+    } catch (error) {
       return HttpResponse.internalServerError()
     }
-
-    const { email, password } = httpRequest.body
-
-    if (!email) {
-      return HttpResponse.badRequest('email')
-    }
-    if (!password) {
-      return HttpResponse.badRequest('password')
-    }
-
-    const accessToken = this.authenticationUseCase.authenticate(email, password)
-
-    if (!accessToken) {
-      return HttpResponse.unauthorizedError()
-    }
-
-    return HttpResponse.ok({ accessToken })
   }
 }
