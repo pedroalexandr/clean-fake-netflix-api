@@ -27,6 +27,16 @@ const makeEmailValidator = () => {
   return new EmailValidatorSpy()
 }
 
+const makeEmailValidatorThrowingError = () => {
+  class EmailValidatorSpy {
+    isValid () {
+      throw new Error()
+    }
+  }
+
+  return new EmailValidatorSpy()
+}
+
 const makeAuthenticationUseCase = () => {
   class AuthenticationUseCaseSpy {
     async authenticate (email, password) {
@@ -46,13 +56,7 @@ const makeAuthenticationUseCaseThrowingError = () => {
     }
   }
 
-  const authenticationUseCaseSpy = new AuthenticationUseCaseSpy()
-  const sut = new LoginRouter(authenticationUseCaseSpy)
-
-  return {
-    sut,
-    authenticationUseCaseSpy
-  }
+  return new AuthenticationUseCaseSpy()
 }
 
 describe('Login Router', () => {
@@ -190,6 +194,21 @@ describe('Login Router', () => {
     expect(httpResponse.body).toEqual(new InternalServerError())
   })
 
+  test('Should return 500 if EmailValidator isValid method throws an error', async () => {
+    const authenticationUseCase = makeAuthenticationUseCase()
+    const emailValidator = makeEmailValidatorThrowingError()
+    const sut = new LoginRouter(authenticationUseCase, emailValidator)
+    const httpRequest = {
+      body: {
+        email: 'foo_email@email.com',
+        password: 'foo_password'
+      }
+    }
+    const httpResponse = await sut.route(httpRequest)
+    expect(httpResponse.statusCode).toBe(500)
+    expect(httpResponse.body).toEqual(new InternalServerError())
+  })
+
   test('Should return 500 if AuthenticationUseCase has no authenticate method', async () => {
     const sut = new LoginRouter({})
     const httpRequest = {
@@ -203,8 +222,9 @@ describe('Login Router', () => {
     expect(httpResponse.body).toEqual(new InternalServerError())
   })
 
-  test('Should return 500 if AuthenticationUseCase authenticate method throws an exception', async () => {
-    const { sut } = makeAuthenticationUseCaseThrowingError()
+  test('Should return 500 if AuthenticationUseCase authenticate method throws an error', async () => {
+    const authenticationUseCase = makeAuthenticationUseCaseThrowingError()
+    const sut = new LoginRouter(authenticationUseCase)
     const httpRequest = {
       body: {
         email: 'foo_email@email.com',
