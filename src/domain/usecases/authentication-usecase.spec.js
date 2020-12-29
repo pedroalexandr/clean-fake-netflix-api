@@ -16,19 +16,16 @@ class AuthenticationUseCase {
   }
 }
 
-const makeLoadUserByEmailRepository = () => {
-  class LoadUserByEmailRepository {
-    async load (email, password) {
-      this.email = email
-      this.password = password
-      return this.email
-    }
+class LoadUserByEmailRepository {
+  async load (email, password) {
+    this.email = email
+    this.password = password
+    return this.email
   }
-  return new LoadUserByEmailRepository()
 }
 
 const makeSUT = () => {
-  const loadUserByEmailRepository = makeLoadUserByEmailRepository()
+  const loadUserByEmailRepository = new LoadUserByEmailRepository()
   const sut = new AuthenticationUseCase(loadUserByEmailRepository)
 
   return {
