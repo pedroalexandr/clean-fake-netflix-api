@@ -6,29 +6,28 @@ class AuthenticationUseCase {
   }
 
   async authenticate (email, password) {
-    if (!email) {
-      throw new MissingParamError('email')
-    } else if (!password) {
-      throw new MissingParamError('password')
-    }
-
+    if (!email) throw new MissingParamError('email')
+    if (!password) throw new MissingParamError('password')
     if (!this.loadUserByEmailRepository) throw new MissingParamError('loadUserByEmailRepository')
     if (!this.loadUserByEmailRepository.load) throw new InvalidParamError('loadUserByEmailRepository')
 
-    await this.loadUserByEmailRepository.load(email)
+    const user = await this.loadUserByEmailRepository.load(email)
+
+    if (!user) return null
   }
 }
 
-class LoadUserByEmailRepository {
-  async load (email, password) {
-    this.email = email
-    this.password = password
-    return this.email
+const makeLoadUserByEmailRepository = () => {
+  class LoadUserByEmailRepositorySpy {
+    async load (email) {
+      this.email = email
+    }
   }
+  return new LoadUserByEmailRepositorySpy()
 }
 
 const makeSUT = () => {
-  const loadUserByEmailRepository = new LoadUserByEmailRepository()
+  const loadUserByEmailRepository = makeLoadUserByEmailRepository()
   const sut = new AuthenticationUseCase(loadUserByEmailRepository)
 
   return {
@@ -62,5 +61,10 @@ describe('AuthenticationUseCase', () => {
     const sut = new AuthenticationUseCase({})
     const promise = sut.authenticate('foo_email@mail.com', 'foo_password')
     expect(promise).rejects.toThrow(new InvalidParamError('loadUserByEmailRepository'))
+  })
+  test('Should return null if LoadUserByEmailRepository load method returns null', async () => {
+    const { sut } = makeSUT()
+    const accessToken = await sut.authenticate('foo_notfound_email@mail.com', 'foo_password')
+    expect(accessToken).toBeNull()
   })
 })
