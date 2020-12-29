@@ -12,7 +12,7 @@ class AuthenticationUseCase {
       throw new MissingParamError('password')
     }
 
-    this.loadUserByEmailRepository.load(email)
+    await this.loadUserByEmailRepository.load(email)
   }
 }
 
