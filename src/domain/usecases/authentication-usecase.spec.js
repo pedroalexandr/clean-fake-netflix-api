@@ -55,8 +55,7 @@ describe('AuthenticationUseCase', () => {
     expect(accessToken).toBeNull()
   })
   test('Should return null if an incorrect password is provided (load returns null)', async () => {
-    const { sut, loadUserByEmailRepository } = makeSUT()
-    loadUserByEmailRepository.user = null
+    const { sut } = makeSUT()
     const accessToken = await sut.authenticate('foo_email@mail.com', 'foo_incorrect_password')
     expect(accessToken).toBeNull()
   })
