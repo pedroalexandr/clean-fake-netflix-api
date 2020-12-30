@@ -112,4 +112,11 @@ describe('AuthenticationUseCase', () => {
     await sut.authenticate('foo_valid_email@mail.com', 'foo_password')
     expect(tokenGenerator.userId).toBe(loadUserByEmailRepository.user.id)
   })
+
+  test('Should return an accessToken if correct credentials are provided', async () => {
+    const { sut, tokenGenerator } = makeSUT()
+    const accessToken = await sut.authenticate('foo_correct_email@mail.com', 'foo_correct_password')
+    expect(accessToken).toBe(tokenGenerator.accessToken)
+    expect(accessToken).toBeTruthy()
+  })
 })
