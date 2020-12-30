@@ -16,8 +16,8 @@ module.exports = class AuthenticationUseCase {
 
     if (!user) return null
 
-    await this.passwordEncrypter.compare(password, user.password)
+    const isPasswordCorrect = await this.passwordEncrypter.compare(password, user.password)
 
-    return null
+    if (!isPasswordCorrect) return null
   }
 }
