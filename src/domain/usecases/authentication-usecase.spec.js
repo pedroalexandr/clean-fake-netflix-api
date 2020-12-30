@@ -100,6 +100,38 @@ describe('AuthenticationUseCase', () => {
     expect(accessToken).toBeNull()
   })
 
+  test('Should throw an error if no PasswordEncrypter is provided', async () => {
+    const loadUserByEmailRepository = makeLoadUserByEmailRepository()
+    const tokenGenerator = makeTokenGenerator()
+    const sut = new AuthenticationUseCase(loadUserByEmailRepository, null, tokenGenerator)
+    const promise = sut.authenticate('foo_email@mail.com', 'foo_password')
+    expect(promise).rejects.toThrow(new MissingParamError('passwordEncrypter'))
+  })
+
+  test('Should throw an error if PasswordEncrypter has no compare method', async () => {
+    const loadUserByEmailRepository = makeLoadUserByEmailRepository()
+    const tokenGenerator = makeTokenGenerator()
+    const sut = new AuthenticationUseCase(loadUserByEmailRepository, {}, tokenGenerator)
+    const promise = sut.authenticate('foo_email@mail.com', 'foo_password')
+    expect(promise).rejects.toThrow(new InvalidParamError('passwordEncrypter'))
+  })
+
+  test('Should throw an error if no TokenGenerator is provided', async () => {
+    const loadUserByEmailRepository = makeLoadUserByEmailRepository()
+    const passwordEncrypter = makePasswordEncrypter()
+    const sut = new AuthenticationUseCase(loadUserByEmailRepository, passwordEncrypter, null)
+    const promise = sut.authenticate('foo_email@mail.com', 'foo_password')
+    expect(promise).rejects.toThrow(new MissingParamError('tokenGenerator'))
+  })
+
+  test('Should throw an error if TokenGenerator has no generate method', async () => {
+    const loadUserByEmailRepository = makeLoadUserByEmailRepository()
+    const passwordEncrypter = makePasswordEncrypter()
+    const sut = new AuthenticationUseCase(loadUserByEmailRepository, passwordEncrypter, {})
+    const promise = sut.authenticate('foo_email@mail.com', 'foo_password')
+    expect(promise).rejects.toThrow(new InvalidParamError('tokenGenerator'))
+  })
+
   test('Should call PasswordEncrypter with correct values', async () => {
     const { sut, loadUserByEmailRepository, passwordEncrypter } = makeSUT()
     await sut.authenticate('foo_valid_email@mail.com', 'foo_password')

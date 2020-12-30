@@ -12,6 +12,8 @@ module.exports = class AuthenticationUseCase {
     if (!password) throw new MissingParamError('password')
     if (!this.loadUserByEmailRepository) throw new MissingParamError('loadUserByEmailRepository')
     if (!this.loadUserByEmailRepository.load) throw new InvalidParamError('loadUserByEmailRepository')
+    if (!this.passwordEncrypter) throw new MissingParamError('passwordEncrypter')
+    if (!this.passwordEncrypter.compare) throw new InvalidParamError('passwordEncrypter')
     if (!this.tokenGenerator) throw new MissingParamError('tokenGenerator')
     if (!this.tokenGenerator.generate) throw new InvalidParamError('tokenGenerator')
 
