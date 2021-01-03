@@ -90,6 +90,12 @@ describe('AuthenticationUseCase', () => {
     expect(promise).rejects.toThrow()
   })
 
+  test('Should throw an error if no dependency is provided', async () => {
+    const sut = new AuthenticationUseCase()
+    const promise = sut.authenticate('foo_email@mail.com', 'foo_password')
+    expect(promise).rejects.toThrow()
+  })
+
   test('Should throw an error if LoadUserByEmailRepository has no load method', async () => {
     const passwordEncrypter = makePasswordEncrypter()
     const tokenGenerator = makeTokenGenerator()
