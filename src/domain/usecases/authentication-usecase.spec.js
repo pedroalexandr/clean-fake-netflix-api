@@ -78,32 +78,6 @@ describe('AuthenticationUseCase', () => {
     expect(loadUserByEmailRepository.email).toBe('foo_email@mail.com')
   })
 
-  test('Should throw an error if no LoadUserByEmailRepository is provided', async () => {
-    const passwordEncrypter = makePasswordEncrypter()
-    const tokenGenerator = makeTokenGenerator()
-    const sut = new AuthenticationUseCase({
-      loadUserByEmailRepository: null,
-      passwordEncrypter,
-      tokenGenerator
-    })
-    const promise = sut.authenticate('foo_email@mail.com', 'foo_password')
-    expect(promise).rejects.toThrow()
-  })
-
-  test('Should throw an error if no dependency is provided', async () => {
-    const sut = new AuthenticationUseCase()
-    const promise = sut.authenticate('foo_email@mail.com', 'foo_password')
-    expect(promise).rejects.toThrow()
-  })
-
-  test('Should throw an error if LoadUserByEmailRepository has no load method', async () => {
-    const passwordEncrypter = makePasswordEncrypter()
-    const tokenGenerator = makeTokenGenerator()
-    const sut = new AuthenticationUseCase({}, passwordEncrypter, tokenGenerator)
-    const promise = sut.authenticate('foo_email@mail.com', 'foo_password')
-    expect(promise).rejects.toThrow()
-  })
-
   test('Should return null if an incorrect email is provided', async () => {
     const { sut, loadUserByEmailRepository } = makeSUT()
     loadUserByEmailRepository.user = null
@@ -118,36 +92,55 @@ describe('AuthenticationUseCase', () => {
     expect(accessToken).toBeNull()
   })
 
-  test('Should throw an error if no PasswordEncrypter is provided', async () => {
-    const loadUserByEmailRepository = makeLoadUserByEmailRepository()
-    const tokenGenerator = makeTokenGenerator()
-    const sut = new AuthenticationUseCase(loadUserByEmailRepository, null, tokenGenerator)
+  test('Should throw an error if no dependency is provided', async () => {
+    const sut = new AuthenticationUseCase()
     const promise = sut.authenticate('foo_email@mail.com', 'foo_password')
     expect(promise).rejects.toThrow()
   })
 
-  test('Should throw an error if PasswordEncrypter has no compare method', async () => {
-    const loadUserByEmailRepository = makeLoadUserByEmailRepository()
-    const tokenGenerator = makeTokenGenerator()
-    const sut = new AuthenticationUseCase(loadUserByEmailRepository, {}, tokenGenerator)
-    const promise = sut.authenticate('foo_email@mail.com', 'foo_password')
-    expect(promise).rejects.toThrow()
-  })
-
-  test('Should throw an error if no TokenGenerator is provided', async () => {
+  test('Should throw an error if invalid dependencies are provided', async () => {
     const loadUserByEmailRepository = makeLoadUserByEmailRepository()
     const passwordEncrypter = makePasswordEncrypter()
-    const sut = new AuthenticationUseCase(loadUserByEmailRepository, passwordEncrypter, null)
-    const promise = sut.authenticate('foo_email@mail.com', 'foo_password')
-    expect(promise).rejects.toThrow()
-  })
+    const tokenGenerator = makeTokenGenerator()
+    const invalidDependency = {}
+    const sutInstancesForTesting = [].concat(
+      new AuthenticationUseCase(),
+      new AuthenticationUseCase({
+        loadUserByEmailRepository: null,
+        passwordEncrypter,
+        tokenGenerator
+      }),
+      new AuthenticationUseCase({
+        loadUserByEmailRepository: invalidDependency,
+        passwordEncrypter,
+        tokenGenerator
+      }),
+      new AuthenticationUseCase({
+        loadUserByEmailRepository,
+        passwordEncrypter: null,
+        tokenGenerator
+      }),
+      new AuthenticationUseCase({
+        loadUserByEmailRepository,
+        passwordEncrypter: invalidDependency,
+        tokenGenerator
+      }),
+      new AuthenticationUseCase({
+        loadUserByEmailRepository,
+        passwordEncrypter,
+        tokenGenerator: null
+      }),
+      new AuthenticationUseCase({
+        loadUserByEmailRepository,
+        passwordEncrypter,
+        tokenGenerator: invalidDependency
+      })
+    )
 
-  test('Should throw an error if TokenGenerator has no generate method', async () => {
-    const loadUserByEmailRepository = makeLoadUserByEmailRepository()
-    const passwordEncrypter = makePasswordEncrypter()
-    const sut = new AuthenticationUseCase(loadUserByEmailRepository, passwordEncrypter, {})
-    const promise = sut.authenticate('foo_email@mail.com', 'foo_password')
-    expect(promise).rejects.toThrow()
+    for (const sutInstance of sutInstancesForTesting) {
+      const promise = sutInstance.authenticate('foo_email@mail.com', 'foo_password')
+      expect(promise).rejects.toThrow()
+    }
   })
 
   test('Should call PasswordEncrypter with correct values', async () => {
