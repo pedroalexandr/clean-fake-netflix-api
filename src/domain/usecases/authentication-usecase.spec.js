@@ -1,4 +1,4 @@
-const { MissingParamError, InvalidParamError } = require('../../utils/errors')
+const { MissingParamError } = require('../../utils/errors')
 const AuthenticationUseCase = require('./authentication-usecase')
 
 const makeLoadUserByEmailRepository = () => {
@@ -8,7 +8,12 @@ const makeLoadUserByEmailRepository = () => {
       return this.user
     }
   }
-  return new LoadUserByEmailRepositorySpy()
+  const loadUserByEmailRepository = new LoadUserByEmailRepositorySpy()
+  loadUserByEmailRepository.user = {
+    id: 'foo_id',
+    password: 'hashed_password'
+  }
+  return loadUserByEmailRepository
 }
 
 const makePasswordEncrypter = () => {
@@ -16,10 +21,12 @@ const makePasswordEncrypter = () => {
     async compare (password, hashedPassword) {
       this.password = password
       this.hashedPassword = hashedPassword
-      return this.isValid
+      return this.isPasswordCorrect
     }
   }
-  return new PasswordEncrypterSpy()
+  const passwordEncrypter = new PasswordEncrypterSpy()
+  passwordEncrypter.isPasswordCorrect = true
+  return passwordEncrypter
 }
 
 const makeTokenGenerator = () => {
@@ -29,22 +36,15 @@ const makeTokenGenerator = () => {
       return this.accessToken
     }
   }
-  return new TokenGeneratorSpy()
+  const tokenGenerator = new TokenGeneratorSpy()
+  tokenGenerator.accessToken = 'valid_access_token'
+  return tokenGenerator
 }
 
 const makeSUT = () => {
   const loadUserByEmailRepository = makeLoadUserByEmailRepository()
-  loadUserByEmailRepository.user = {
-    id: 'foo_id',
-    password: 'hashed_password'
-  }
-
   const passwordEncrypter = makePasswordEncrypter()
-  passwordEncrypter.isValid = true
-
   const tokenGenerator = makeTokenGenerator()
-  tokenGenerator.accessToken = 'valid_access_token'
-
   const sut = new AuthenticationUseCase(loadUserByEmailRepository, passwordEncrypter, tokenGenerator)
 
   return {
@@ -75,15 +75,19 @@ describe('AuthenticationUseCase', () => {
   })
 
   test('Should throw an error if no LoadUserByEmailRepository is provided', async () => {
-    const sut = new AuthenticationUseCase()
+    const passwordEncrypter = makePasswordEncrypter()
+    const tokenGenerator = makeTokenGenerator()
+    const sut = new AuthenticationUseCase(null, passwordEncrypter, tokenGenerator)
     const promise = sut.authenticate('foo_email@mail.com', 'foo_password')
-    expect(promise).rejects.toThrow(new MissingParamError('loadUserByEmailRepository'))
+    expect(promise).rejects.toThrow()
   })
 
   test('Should throw an error if LoadUserByEmailRepository has no load method', async () => {
-    const sut = new AuthenticationUseCase({})
+    const passwordEncrypter = makePasswordEncrypter()
+    const tokenGenerator = makeTokenGenerator()
+    const sut = new AuthenticationUseCase({}, passwordEncrypter, tokenGenerator)
     const promise = sut.authenticate('foo_email@mail.com', 'foo_password')
-    expect(promise).rejects.toThrow(new InvalidParamError('loadUserByEmailRepository'))
+    expect(promise).rejects.toThrow()
   })
 
   test('Should return null if an incorrect email is provided', async () => {
@@ -95,7 +99,7 @@ describe('AuthenticationUseCase', () => {
 
   test('Should return null if an incorrect password is provided', async () => {
     const { sut, passwordEncrypter } = makeSUT()
-    passwordEncrypter.isValid = false
+    passwordEncrypter.isPasswordCorrect = false
     const accessToken = await sut.authenticate('foo_email@mail.com', 'foo_incorrect_password')
     expect(accessToken).toBeNull()
   })
@@ -105,7 +109,7 @@ describe('AuthenticationUseCase', () => {
     const tokenGenerator = makeTokenGenerator()
     const sut = new AuthenticationUseCase(loadUserByEmailRepository, null, tokenGenerator)
     const promise = sut.authenticate('foo_email@mail.com', 'foo_password')
-    expect(promise).rejects.toThrow(new MissingParamError('passwordEncrypter'))
+    expect(promise).rejects.toThrow()
   })
 
   test('Should throw an error if PasswordEncrypter has no compare method', async () => {
@@ -113,7 +117,7 @@ describe('AuthenticationUseCase', () => {
     const tokenGenerator = makeTokenGenerator()
     const sut = new AuthenticationUseCase(loadUserByEmailRepository, {}, tokenGenerator)
     const promise = sut.authenticate('foo_email@mail.com', 'foo_password')
-    expect(promise).rejects.toThrow(new InvalidParamError('passwordEncrypter'))
+    expect(promise).rejects.toThrow()
   })
 
   test('Should throw an error if no TokenGenerator is provided', async () => {
@@ -121,7 +125,7 @@ describe('AuthenticationUseCase', () => {
     const passwordEncrypter = makePasswordEncrypter()
     const sut = new AuthenticationUseCase(loadUserByEmailRepository, passwordEncrypter, null)
     const promise = sut.authenticate('foo_email@mail.com', 'foo_password')
-    expect(promise).rejects.toThrow(new MissingParamError('tokenGenerator'))
+    expect(promise).rejects.toThrow()
   })
 
   test('Should throw an error if TokenGenerator has no generate method', async () => {
@@ -129,7 +133,7 @@ describe('AuthenticationUseCase', () => {
     const passwordEncrypter = makePasswordEncrypter()
     const sut = new AuthenticationUseCase(loadUserByEmailRepository, passwordEncrypter, {})
     const promise = sut.authenticate('foo_email@mail.com', 'foo_password')
-    expect(promise).rejects.toThrow(new InvalidParamError('tokenGenerator'))
+    expect(promise).rejects.toThrow()
   })
 
   test('Should call PasswordEncrypter with correct values', async () => {
