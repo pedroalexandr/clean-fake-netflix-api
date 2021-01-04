@@ -26,6 +26,15 @@ const makeUpdateAccessTokenRepository = () => {
   return new UpdateAccessTokenRepositorySpy()
 }
 
+const makeUpdateAccessTokenRepositoryThrowing = () => {
+  class UpdateAccessTokenRepositorySpy {
+    async update () {
+      throw new Error()
+    }
+  }
+  return new UpdateAccessTokenRepositorySpy()
+}
+
 const makeLoadUserByEmailRepositoryThrowing = () => {
   class LoadUserByEmailRepositorySpy {
     async load () {
@@ -140,6 +149,7 @@ describe('AuthenticationUseCase', () => {
 
   test('Should throw if invalid dependencies are provided', async () => {
     const loadUserByEmailRepository = makeLoadUserByEmailRepository()
+    const updateAccessTokenRepository = makeUpdateAccessTokenRepository()
     const passwordEncrypter = makePasswordEncrypter()
     const tokenGenerator = makeTokenGenerator()
     const invalidDependency = {}
@@ -147,11 +157,25 @@ describe('AuthenticationUseCase', () => {
       new AuthenticationUseCase(),
       new AuthenticationUseCase({
         loadUserByEmailRepository: null,
+        updateAccessTokenRepository,
         passwordEncrypter,
         tokenGenerator
       }),
       new AuthenticationUseCase({
         loadUserByEmailRepository: invalidDependency,
+        updateAccessTokenRepository,
+        passwordEncrypter,
+        tokenGenerator
+      }),
+      new AuthenticationUseCase({
+        loadUserByEmailRepository,
+        updateAccessTokenRepository: null,
+        passwordEncrypter,
+        tokenGenerator
+      }),
+      new AuthenticationUseCase({
+        loadUserByEmailRepository,
+        updateAccessTokenRepository: invalidDependency,
         passwordEncrypter,
         tokenGenerator
       }),
@@ -185,21 +209,31 @@ describe('AuthenticationUseCase', () => {
 
   test('Should throw if any dependency throws', async () => {
     const loadUserByEmailRepository = makeLoadUserByEmailRepository()
+    const updateAccessTokenRepository = makeUpdateAccessTokenRepository()
     const passwordEncrypter = makePasswordEncrypter()
     const tokenGenerator = makeTokenGenerator()
     const sutInstancesForTesting = [].concat(
       new AuthenticationUseCase({
         loadUserByEmailRepository: makeLoadUserByEmailRepositoryThrowing(),
+        updateAccessTokenRepository,
         passwordEncrypter,
         tokenGenerator
       }),
       new AuthenticationUseCase({
         loadUserByEmailRepository,
+        updateAccessTokenRepository: makeUpdateAccessTokenRepositoryThrowing(),
+        passwordEncrypter,
+        tokenGenerator
+      }),
+      new AuthenticationUseCase({
+        loadUserByEmailRepository,
+        updateAccessTokenRepository,
         passwordEncrypter: makePasswordEncrypterThrowing(),
         tokenGenerator
       }),
       new AuthenticationUseCase({
         loadUserByEmailRepository,
+        updateAccessTokenRepository,
         passwordEncrypter,
         tokenGenerator: makeTokenGeneratorThrowing()
       })
